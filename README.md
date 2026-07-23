@@ -1,5 +1,5 @@
-<img width="1254" height="1254" alt="logo" src="https://github.com/user-attachments/assets/865b081a-630e-4ceb-a5ae-35aa77eca32b" />
 # Workout-tracker
+<img width="1254" height="1254" alt="logo" src="https://github.com/user-attachments/assets/865b081a-630e-4ceb-a5ae-35aa77eca32b" />
 The Workout Tracker is an advanced, browser-based fitness coach powered by TensorFlow.js and real-time pose detection. It helps users perform workouts with correct form, counts reps automatically, tracks accuracy, logs history, and provides feedback — all through the device’s camera.
 Designed for web, Android WebView, and mobile browsers, it runs fully client-side with no backend required.
 🚀 Features
