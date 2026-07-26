@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Workout Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- TensorFlow.js + MoveNet -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection">
+  </script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ===== LOGIN PAGE ===== -->
+  <div id="login-container" class="login-wrapper">
+    <div class="stars-container" id="stars-container"></div>
+    <div class="login-content">
+      <div class="login-box">
+        <div class="login-header">
+          <img src="assets/logo.png" alt="Workout Tracker Logo" class="login-logo" />
+          <h1>Workout Tracker</h1>
+          <p>Sign in to your account</p>
+        </div>
+        <form id="login-form" autocomplete="off">
+          <div class="input-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Enter username" required autocomplete="off" />
+            <span class="input-icon" aria-hidden="true">👤</span>
+          </div>
+          <div class="input-group">
+            <label for="password">Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="password" placeholder="Enter password" required autocomplete="off" />
+              <button type="button" class="toggle-password-btn" aria-label="Toggle password visibility">👁️</button>
+            </div>
+            <span class="input-icon" aria-hidden="true">🔐</span>
+          </div>
+          <button type="submit" class="login-btn">Sign In</button>
+        </form>
+        <div class="login-footer">
+          <p class="error-message" id="error-message"></p>
+          <p class="hint-text">Demo: user / 12345678</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== KEYBOARD HELP ===== -->
+  <button id="keyboard-help" class="keyboard-help" aria-label="Show keyboard shortcuts" style="display: none;">?</button>
+
+  <!-- ===== MAIN APP ===== -->
+  <main class="container" id="app-container" style="display: none;">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-container">
+        <img src="assets/logo.png" alt="Workout Tracker Logo" class="app-logo" />
+        <div>
+          <h1>Workout Tracker</h1>
+          <p>Powered For Analysis &amp; Rep Counting</p>
+        </div>
+      </div>
+      <div>
+        <button id="dark-mode-toggle" class="btn-secondary" aria-label="Toggle dark mode">🌙</button>
+        <button id="videos-btn" class="btn-secondary" aria-label="Open video library">🎬 Videos</button>
+        <button id="instructions-btn" class="btn-secondary" aria-label="Open instructions">📖 Instructions</button>
+        <button id="import-btn" class="btn-secondary" onclick="document.getElementById('import-file').click()">📂 Import Data</button>
+        <input type="file" id="import-file" style="display: none;" accept=".json" />
+        <button id="export-btn" class="btn-secondary" onclick="exportWorkoutData()">💾 Export Data</button>
+        <button id="logout-btn" class="btn-secondary">🚪 Logout</button>
+      </div>
+    </header>
+
+    <!-- ===== MAIN DASHBOARD ===== -->
+    <div id="app-main">
+      <div class="grid-thirds">
+        <!-- Left Column: Video & Controls -->
+        <section>
+          <div class="video-container">
+            <video id="video" playsinline></video>
+            <canvas id="overlay"></canvas>
+            <div id="camera-permission" class="camera-permission">
+              <h3>Camera Access Required</h3>
+              <p>We need access to your camera to analyze your workout form.</p>
+              <p>Your privacy is important: Logic runs 100% locally on your device.</p>
+              <button id="enable-camera-btn" class="btn-primary">Enable Camera</button>
+            </div>
+          </div>
+
+          <div id="feedback" aria-live="polite">Select an exercise to begin</div>
+          <div style="text-align: center; color: var(--text-secondary); font-size: 0.9em;">Form Accuracy: <span id="accuracy">0%</span></div>
+
+          <div class="controls">
+            <button id="toggle-btn" class="btn-primary">▶ Start</button>
+            <button id="pause-btn" class="btn-secondary" disabled>⏸ Pause</button>
+            <button id="reset-btn" class="btn-danger">🔄 Reset</button>
+            <button id="voice-btn" class="btn-secondary">🎤 Voice Control</button>
+          </div>
+
+          <div class="progress-container">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </section>
+
+        <!-- Right Column: Stats & Instructions -->
+        <aside>
+          <div class="stats-container">
+            <div class="stat-box">
+              <div class="stat-value" id="rep-count">0</div>
+              <div class="stat-label">Reps</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" id="total-reps">0</div>
+              <div class="stat-label">Total Reps</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" id="timer">00:00</div>
+              <div class="stat-label">Time</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" id="calories">0</div>
+              <div class="stat-label">Calories</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" id="streak">0</div>
+              <div class="stat-label">Day Streak</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 10px; display: flex; gap: 5px; justify-content: center;">
+            <button id="stats-btn" class="btn-secondary" style="flex: 1;">📊 Stats</button>
+            <div class="share-buttons" style="display: flex; gap: 5px;">
+              <button class="share-twitter" aria-label="Share on Twitter" style="background: #1DA1F2; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">🐦</button>
+              <button class="share-facebook" aria-label="Share on Facebook" style="background: #4267B2; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">Facebook</button>
+            </div>
+          </div>
+
+          <div id="instructions" style="margin-top: 20px;">
+            <p><strong>Instructions:</strong></p>
+            <p>1. Enable camera access.</p>
+            <p>2. Select an exercise from the list below.</p>
+            <p>3. Ensure your full body is visible in the camera.</p>
+            <p>4. Press Start and follow the form guidance!</p>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Filters -->
+      <nav class="filters" aria-label="Exercise filters">
+        <input type="text" id="exercise-search" placeholder="🔍 Search exercises..." aria-label="Search exercises" />
+        <div class="category-filter active" data-category="all">All</div>
+        <div class="category-filter" data-category="Chest">Chest</div>
+        <div class="category-filter" data-category="Back">Back</div>
+        <div class="category-filter" data-category="Legs">Legs</div>
+        <div class="category-filter" data-category="Arms">Arms</div>
+        <div class="category-filter" data-category="Shoulders">Shoulders</div>
+        <div class="category-filter" data-category="Core">Core</div>
+        <div class="category-filter" data-category="Full Body">Full Body</div>
+        <div class="category-filter" data-category="Cardio">Cardio</div>
+      </nav>
+
+      <!-- Exercise Grid -->
+      <section id="exercise-grid" class="grid">
+        <!-- Populated by JavaScript -->
+      </section>
+
+      <!-- Features: Custom Plans & History -->
+      <div class="grid-halves" style="margin-top: 40px;">
+        <!-- Custom Plans -->
+        <section>
+          <div style="background: var(--bg-card); padding: 20px; border-radius: var(--border-radius); box-shadow: var(--shadow); border: 1px solid var(--border-color);">
+            <h3>🏋️ Create Custom Plan</h3>
+            <input type="text" id="plan-name" placeholder="Plan Name (e.g., Morning Blast)" style="width: 100%; margin-bottom: 10px; box-sizing: border-box;" />
+            <div id="custom-plan-exercises">
+              <!-- Exercise inputs added here -->
+            </div>
+            <button id="add-exercise-btn" class="btn-secondary" style="margin-top: 10px;">+ Add Exercise</button>
+            <button id="save-custom-plan-btn" class="btn-primary" style="margin-top: 10px;">Save Plan</button>
+
+            <h4 style="margin-top: 20px;">Saved Plans:</h4>
+            <div id="saved-custom-plans">
+              <p style="text-align: center; color: var(--text-secondary);">No custom plans yet</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Achievements & History -->
+        <section>
+          <div style="background: var(--bg-card); padding: 20px; border-radius: var(--border-radius); box-shadow: var(--shadow); border: 1px solid var(--border-color);">
+            <h3>🏆 Achievements</h3>
+            <div class="achievement-grid" style="margin-bottom: 30px;">
+              <div class="achievement-card">
+                <div class="achievement-icon">🥇</div>
+                <div style="font-size: 0.9em; font-weight: bold;">First Workout</div>
+                <div class="achievement-progress">
+                  <div id="first-workout-progress" class="achievement-bar"></div>
+                </div>
+              </div>
+              <div class="achievement-card">
+                <div class="achievement-icon">💯</div>
+                <div style="font-size: 0.9em; font-weight: bold;">100 Reps</div>
+                <div class="achievement-progress">
+                  <div id="hundred-reps-progress" class="achievement-bar"></div>
+                </div>
+              </div>
+              <div class="achievement-card">
+                <div class="achievement-icon">⭐</div>
+                <div style="font-size: 0.9em; font-weight: bold;">Perfect Form</div>
+                <div class="achievement-progress">
+                  <div id="perfect-form-progress" class="achievement-bar"></div>
+                </div>
+              </div>
+              <div class="achievement-card">
+                <div class="achievement-icon">🔥</div>
+                <div style="font-size: 0.9em; font-weight: bold;">7 Day Streak</div>
+                <div class="achievement-progress">
+                  <div id="streak-progress" class="achievement-bar"></div>
+                </div>
+              </div>
+            </div>
+
+            <h3>📅 History <button id="clear-history-btn" class="btn-danger" style="font-size: 0.7em; padding: 5px 10px; float: right;">Clear</button></h3>
+            <ul id="history-list" class="history-list">
+              <li style="text-align: center; color: var(--text-secondary);">No workouts yet. Start your first workout!</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ===== VIDEO PAGE (Hidden by default) ===== -->
+    <div id="videos-page" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <h2>📹 Workout Videos</h2>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <input type="text" id="video-search" placeholder="🔍 Search videos..." style="padding: 8px 15px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); min-width: 180px;" />
+          <button id="videos-back-btn" class="btn-secondary">← Back to Dashboard</button>
+        </div>
+      </div>
+      <div id="videos-grid" class="videos-grid">
+        <!-- Populated by JavaScript -->
+      </div>
+    </div>
+
+    <!-- ===== INSTRUCTIONS PAGE (Hidden by default) ===== -->
+    <div id="instructions-page" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <h2>📖 Exercise Instructions</h2>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <input type="text" id="instructions-search" placeholder="🔍 Search exercises..." style="padding: 8px 15px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); min-width: 180px;" />
+          <button id="instructions-back-btn" class="btn-secondary">← Back to Dashboard</button>
+        </div>
+      </div>
+      <!-- Instructions Filters -->
+      <div class="filters" id="instructions-filters" style="margin-bottom: 20px;">
+        <div class="category-filter active" data-category="all" data-filter-group="instructions">All</div>
+        <div class="category-filter" data-category="Chest" data-filter-group="instructions">Chest</div>
+        <div class="category-filter" data-category="Back" data-filter-group="instructions">Back</div>
+        <div class="category-filter" data-category="Legs" data-filter-group="instructions">Legs</div>
+        <div class="category-filter" data-category="Arms" data-filter-group="instructions">Arms</div>
+        <div class="category-filter" data-category="Shoulders" data-filter-group="instructions">Shoulders</div>
+        <div class="category-filter" data-category="Core" data-filter-group="instructions">Core</div>
+        <div class="category-filter" data-category="Full Body" data-filter-group="instructions">Full Body</div>
+        <div class="category-filter" data-category="Cardio" data-filter-group="instructions">Cardio</div>
+      </div>
+      <div id="instructions-grid" class="instructions-grid">
+        <!-- Populated by JavaScript -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ===== VIDEO MODAL ===== -->
+  <div id="video-modal" class="video-modal" style="display: none;">
+    <div class="video-modal-content">
+      <span class="video-modal-close">&times;</span>
+      <div id="video-player-container">
+        <!-- iframe or video element will be inserted here -->
+      </div>
+      <h3 id="video-title">Exercise Name</h3>
+    </div>
+  </div>
+
+  <!-- ===== INSTRUCTION MODAL ===== -->
+  <div id="instruction-modal" class="video-modal" style="display: none;">
+    <div class="video-modal-content" style="max-width: 600px;">
+      <span class="instruction-modal-close" style="position: absolute; top: 10px; right: 20px; font-size: 28px; color: var(--text-secondary); cursor: pointer; transition: var(--transition);">&times;</span>
+      <h2 id="instruction-modal-title" style="color: var(--accent-green); margin-bottom: 10px;">Exercise Name</h2>
+      <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+        <span id="instruction-modal-category" style="background: var(--bg-input); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--text-secondary);">Category</span>
+        <span id="instruction-modal-difficulty" style="background: var(--bg-input); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--text-secondary);">Difficulty</span>
+        <span id="instruction-modal-calories" style="background: var(--bg-input); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--text-secondary);">Calories</span>
+      </div>
+      <div style="background: var(--bg-input); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-green);">
+        <p id="instruction-modal-text" style="line-height: 1.8; color: var(--text-primary); font-size: 16px;"></p>
+      </div>
+      <button onclick="closeInstructionModal()" style="margin-top: 20px; width: 100%; padding: 12px; background: var(--accent-green); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: var(--transition);">Close</button>
+    </div>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
