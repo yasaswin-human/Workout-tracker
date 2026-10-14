@@ -2,7 +2,7 @@
 <img width="1254" height="1254" alt="logo" src="https://github.com/user-attachments/assets/865b081a-630e-4ceb-a5ae-35aa77eca32b" />
 The Workout Tracker is an advanced, browser-based fitness coach powered by TensorFlow.js and real-time pose detection. It helps users perform workouts with correct form, counts reps automatically, tracks accuracy, logs history, and provides feedback — all through the device’s camera.
 Designed for web, Android WebView, and mobile browsers, it runs fully client-side with no backend required.
-#🚀 Features
+# 🚀 Features
 ✅ Pre trained Pose Detection
 Real-time body tracking using TensorFlow MoveNet
 
@@ -12,14 +12,14 @@ Accuracy estimation for each movement
 
 Visual skeleton overlay
 
-#🏋️ Exercise Library (238 Exercises)
+# 🏋️ Exercise Library (238 Exercises)
 Categorized by Chest, Back, Arms, Legs, Shoulders, Core, Cardio, Strength, Mobility
 
 Includes difficulty levels: Beginner, Intermediate, Advanced
 
 Search bar & category filter system
 
-#🎮 Interactive Workout Controls
+# 🎮 Interactive Workout Controls
 Start / Pause / Stop workout
 
 Live rep counter
@@ -30,12 +30,12 @@ Voice control support
 
 Timer + progress bar
 
-#📝 Workout Plans
+# 📝 Workout Plans
 Full Custom Plan Builder
 
 Save, modify, and run personalized routines
 
-#📈 Stats & History
+# 📈 Stats & History
 Day streak tracking
 
 Total reps
@@ -46,10 +46,10 @@ Detailed workout logs
 
 Export / import workout data (JSON)
 
-🌙 Dark/Light Mode
+🌙  Dark/Light Mode
 Supports theme switching with UI memory.
 
-#🛠️ Technologies Used
+# 🛠️ Technologies Used
 TensorFlow.js (MoveNet pose detection)
 
 HTML5 / CSS3 / JavaScript
